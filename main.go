@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -53,7 +54,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() tea.View {
-	s := "Check out this list\n\n"
+	output := make([]string, 3)
+	output = append(output, "Select Branch to Delete\n\n")
 	for i, choice := range m.choices {
 		cursor := " "
 		if m.cursor == i {
@@ -66,11 +68,11 @@ func (m model) View() tea.View {
 			selected = "x"
 		}
 
-		s += fmt.Sprintf("%s [%s] %s\n", cursor, selected, choice)
+		output = append(output, fmt.Sprintf("%s [%s] %s\n", cursor, selected, choice))
 
 	}
-	s += "\nPress q or ctrl+c to exit\n"
-	return tea.NewView(s)
+	output = append(output, "\nPress q or ctrl+c to exit\n")
+	return tea.NewView(strings.Join(output, ""))
 }
 
 func main() {

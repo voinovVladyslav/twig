@@ -9,21 +9,40 @@ import (
 )
 
 type model struct {
-	choices  []string
+	choices  []branch
 	cursor   int
 	selected map[int]struct{}
 }
 
+type branch struct {
+	name    string
+	current bool
+	remote  bool
+}
+
+type getBranchesMsg struct {
+	branches []branch
+}
+
 func initialModel() model {
 	return model{
-		choices:  []string{"First row", "Second row", "Third row"},
+		choices:  make([]branch, 0),
 		cursor:   0,
 		selected: make(map[int]struct{}),
 	}
 }
 
+func getBranchesCmd() tea.Msg {
+	branches := []branch{}
+	branches = append(branches, branch{"main", true, false})
+	branches = append(branches, branch{"feature", false, false})
+	branches = append(branches, branch{"origin/feature", false, true})
+	ev := getBranchesMsg{branches}
+	return ev
+}
+
 func (m model) Init() tea.Cmd {
-	return nil
+	return getBranchesCmd
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -49,6 +68,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "enter":
 		}
+	case getBranchesMsg:
+		m.choices = msg.branches
 	}
 	return m, nil
 }
@@ -68,12 +89,15 @@ func (m model) View() tea.View {
 			selected = "x"
 		}
 
-		output = append(output, fmt.Sprintf("%s [%s] %s\n", cursor, selected, choice))
+		output = append(output,
+			fmt.Sprintf("%s [%s] %s\n", cursor, selected, choice.name),
+		)
 
 	}
 	output = append(output, "\nPress q or ctrl+c to exit\n")
 	return tea.NewView(strings.Join(output, ""))
 }
+
 
 func main() {
 	p := tea.NewProgram(initialModel())

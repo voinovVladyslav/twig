@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type model struct {
@@ -24,6 +25,12 @@ type branch struct {
 type getBranchesMsg struct {
 	branches []branch
 }
+
+var (
+	selectedStyle = lipgloss.NewStyle().Bold(true)
+	remoteStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#a00000"))
+	currentStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#0a0"))
+)
 
 func initialModel() model {
 	return model{
@@ -81,15 +88,22 @@ func (m model) View() tea.View {
 			cursor = ">"
 		}
 
+		line := choice.name
 		selected := " "
 		_, ok := m.selected[i]
 		if ok {
 			selected = "x"
+			line = selectedStyle.Render(line)
 		}
 
-		output = append(output,
-			fmt.Sprintf("%s [%s] %s\n", cursor, selected, choice.name),
-		)
+		if choice.remote {
+			line = remoteStyle.Render(line)
+		} else if choice.current {
+			line = currentStyle.Render(line)
+		}
+
+		composedLine := fmt.Sprintf("%s [%s] %s\n", cursor, selected, line)
+		output = append(output, composedLine)
 
 	}
 	output = append(output, "\nPress q or ctrl+c to exit\n")

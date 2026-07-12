@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -33,10 +34,7 @@ func initialModel() model {
 }
 
 func getBranchesCmd() tea.Msg {
-	branches := []branch{}
-	branches = append(branches, branch{"main", true, false})
-	branches = append(branches, branch{"feature", false, false})
-	branches = append(branches, branch{"origin/feature", false, true})
+	branches := getBranches()
 	ev := getBranchesMsg{branches}
 	return ev
 }
@@ -98,6 +96,28 @@ func (m model) View() tea.View {
 	return tea.NewView(strings.Join(output, ""))
 }
 
+func getBranches() []branch {
+	branches := make([]branch, 0)
+	cmd := exec.Command("git", "branch", "-a")
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("Error: %v", err)
+		return branches
+	}
+	for line := range strings.SplitSeq(string(output), "\n") {
+		if len(strings.Trim(line, "\n")) == 0 {
+			continue
+		}
+		isCurrent := strings.Contains(line, "*")
+		name := strings.Trim(line, " *")
+		remote := strings.HasPrefix(name, "remotes/")
+		if remote {
+			name = name[len("remotes/"):]
+		}
+		branches = append(branches, branch{name, isCurrent, remote})
+	}
+	return branches
+}
 
 func main() {
 	p := tea.NewProgram(initialModel())

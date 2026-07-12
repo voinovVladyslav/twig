@@ -175,7 +175,7 @@ func (m model) View() tea.View {
 		composedLine := fmt.Sprintf("%s [%s] %s", cursor, selected, line)
 		errMsg, ok := m.errors[choice]
 		if ok {
-			composedLine += "   Err: " + errorStyle.Render(errMsg) + "\n"
+			composedLine += "   ! " + errorStyle.Render(errMsg) + "\n"
 		} else {
 			composedLine += "\n"
 		}

@@ -50,12 +50,9 @@ func getBranchesCmd() tea.Msg {
 	return ev
 }
 
-func deleteBranch(b *branch) error {
+func deleteBranch(b branch) error {
 	if b.current {
 		return errors.New("cannot delete current branch")
-	}
-	if b.name == "main" {
-		return errors.New("cannot delete main branch, it's main")
 	}
 
 	flags := "-D"
@@ -83,7 +80,7 @@ func deleteBranchesCmd(branches []branch) tea.Cmd {
 	return func() tea.Msg {
 		resp := make([]deleteBranchesMsg, 0)
 		for _, b := range branches {
-			err := deleteBranch(&b)
+			err := deleteBranch(b)
 			if err != nil {
 				resp = append(resp, deleteBranchesMsg{err.Error(), b})
 			}
@@ -102,14 +99,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
+
 		case "up", "k":
 			if m.cursor > 0 {
 				m.cursor--
 			}
+
 		case "down", "j":
 			if m.cursor < len(m.choices)-1 {
 				m.cursor++
 			}
+
 		case "space":
 			_, ok := m.selected[m.cursor]
 			if ok {
@@ -122,7 +122,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			clear(m.selected)
 			clear(m.errors)
 			clear(m.choices)
+			m.cursor = 0
 			return m, getBranchesCmd
+
 		case "enter":
 			toDelete := make([]branch, 0)
 			for i := range m.selected {
@@ -137,20 +139,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case getBranchesMsg:
 		m.choices = msg.branches
+
 	case deleteBranchesMsgs:
 		clear(m.errors)
 		for _, message := range msg.messages {
 			m.errors[message.b] = message.msg
 		}
+
 	}
 	return m, nil
 }
 
 func (m model) View() tea.View {
-	output := make([]string, 3)
+	output := make([]string, 0)
 	output = append(output, "Press Space to select branch\n")
 	output = append(output, "Press Enter to Delete selected branches\n")
-	output = append(output, "Press r to Delete selected branches\n\n")
+	output = append(output, "Press r to Refresh\n\n")
 	output = append(output, "Branches:\n")
 	for i, choice := range m.choices {
 		cursor := " "
@@ -191,7 +195,6 @@ func getBranches() []branch {
 	cmd := exec.Command("git", "branch", "-a")
 	output, err := cmd.Output()
 	if err != nil {
-		fmt.Printf("Error: %v", err)
 		return branches
 	}
 	for line := range strings.SplitSeq(string(output), "\n") {
@@ -212,7 +215,6 @@ func getBranches() []branch {
 func main() {
 	p := tea.NewProgram(initialModel())
 	if _, err := p.Run(); err != nil {
-		fmt.Printf("There is error: %v", err)
 		os.Exit(1)
 	}
 }
